@@ -1,14 +1,16 @@
 #ifndef POSE_GRAPH_POTIMIZATION_H
 #define POSE_GRAPH_POTIMIZATION_H
+#include "geometry_msgs/msg/point.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include <Eigen/Core>
 #include <g2o/core/block_solver.h>
-#include <g2o/core/optimization_algorithm_levenberg.h>
+#include <g2o/core/g2o_core_api.h>
+#include <g2o/core/optimization_algorithm_gauss_newton.h>
 #include <g2o/core/robust_kernel_impl.h>
 #include <g2o/core/sparse_optimizer.h>
-#include <g2o/solvers/eigen/linear_solver_eigen.h>
+#include <g2o/solvers/dense/linear_solver_dense.h>
 #include <g2o/types/slam2d/types_slam2d.h>
 #include <iostream>
 #include <sophus/se2.hpp>
@@ -40,23 +42,24 @@ public:
 private:
   void robotPosePublish();
   void landmarkPublish();
+  void edgePublish();
   void initialOptimization();
   void initialData();
-  void optimization();
 
 private:
   rclcpp::TimerBase::SharedPtr timer_;
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr robotPosePublisher_;
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr landmarkPublisher_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr markerPublisher_;
 
   std::vector<RobotPoseT> robotPoses_;
   std::vector<LandmarkT> landmarks_;
   std::vector<EdgeT> observations_;
 
-  std::unique_ptr<g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>> linearSolver_;
+  std::unique_ptr<g2o::LinearSolverDense<g2o::BlockSolverX::PoseMatrixType>> linearSolver_;
   std::unique_ptr<g2o::BlockSolverX> blockSolver_;
-  g2o::OptimizationAlgorithmLevenberg *algorithm_;
+  g2o::OptimizationAlgorithmGaussNewton *algorithm_;
   g2o::SparseOptimizer *optimizer_;
+
+  int32_t iter_;
 };
 } // namespace PGO
 
