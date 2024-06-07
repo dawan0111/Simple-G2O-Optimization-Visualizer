@@ -8,7 +8,7 @@ PoseGraphOptimization::PoseGraphOptimization(const rclcpp::NodeOptions &options)
   iter_ = 0;
   linearSolver_ = std::make_unique<g2o::LinearSolverDense<g2o::BlockSolverX::PoseMatrixType>>();
   blockSolver_ = std::make_unique<g2o::BlockSolverX>(std::move(linearSolver_));
-  algorithm_ = new g2o::OptimizationAlgorithmGaussNewton(std::move(blockSolver_));
+  algorithm_ = new g2o::OptimizationAlgorithmLevenberg(std::move(blockSolver_));
 
   optimizer_ = new g2o::SparseOptimizer;
   optimizer_->setAlgorithm(algorithm_);
@@ -21,13 +21,16 @@ PoseGraphOptimization::PoseGraphOptimization(const rclcpp::NodeOptions &options)
 
   auto interval = std::chrono::duration<double>(1.0);
 
-  timer_ = this->create_wall_timer(interval, [this]() -> void {
-    this->robotPosePublish();
-    this->landmarkPublish();
-    this->edgePublish();
+  this->robotPosePublish();
+  this->landmarkPublish();
+  this->edgePublish();
 
+  timer_ = this->create_wall_timer(interval, [this]() -> void {
     if (iter_ < 10) {
       optimizer_->optimize(1);
+      this->robotPosePublish();
+      this->landmarkPublish();
+      this->edgePublish();
     }
     iter_ += 1;
   });
@@ -41,15 +44,15 @@ void PoseGraphOptimization::initialData() {
   int32_t landmarkIndex = 1000;
 
   landmarks_.emplace_back(landmarkIndex + 1, Eigen::Vector2d(1.0, 0.0));
-  landmarks_.emplace_back(landmarkIndex + 2, Eigen::Vector2d(0.0, 1.0));
-  landmarks_.emplace_back(landmarkIndex + 3, Eigen::Vector2d(-1.0, 0.0));
-  landmarks_.emplace_back(landmarkIndex + 4, Eigen::Vector2d(0.0, -1.0));
+  landmarks_.emplace_back(landmarkIndex + 2, Eigen::Vector2d(1.0, 0.2));
+  landmarks_.emplace_back(landmarkIndex + 3, Eigen::Vector2d(1.0, 0.4));
+  landmarks_.emplace_back(landmarkIndex + 4, Eigen::Vector2d(1.0, 0.6));
 
   int32_t edgeIndex = 0;
   observations_.emplace_back(edgeIndex, 1, landmarkIndex + 1, Eigen::Vector2d(0.51, 0.01));
-  // observations_.emplace_back(++edgeIndex, 1, landmarkIndex + 2, Eigen::Vector2d(0.0, 0.49));
-  // observations_.emplace_back(++edgeIndex, 1, landmarkIndex + 3, Eigen::Vector2d(-0.489, 0.0));
-  // observations_.emplace_back(++edgeIndex, 1, landmarkIndex + 3, Eigen::Vector2d(0.0, -0.51));
+  observations_.emplace_back(++edgeIndex, 1, landmarkIndex + 2, Eigen::Vector2d(0.48, 0.18));
+  observations_.emplace_back(++edgeIndex, 1, landmarkIndex + 3, Eigen::Vector2d(0.47, 0.45));
+  observations_.emplace_back(++edgeIndex, 1, landmarkIndex + 3, Eigen::Vector2d(0.53, 0.57));
 }
 
 void PoseGraphOptimization::initialOptimization() {

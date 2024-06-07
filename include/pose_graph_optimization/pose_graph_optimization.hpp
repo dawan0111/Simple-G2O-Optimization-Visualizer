@@ -8,6 +8,7 @@
 #include <g2o/core/block_solver.h>
 #include <g2o/core/g2o_core_api.h>
 #include <g2o/core/optimization_algorithm_gauss_newton.h>
+#include <g2o/core/optimization_algorithm_levenberg.h>
 #include <g2o/core/robust_kernel_impl.h>
 #include <g2o/core/sparse_optimizer.h>
 #include <g2o/solvers/dense/linear_solver_dense.h>
@@ -56,7 +57,7 @@ private:
 
   std::unique_ptr<g2o::LinearSolverDense<g2o::BlockSolverX::PoseMatrixType>> linearSolver_;
   std::unique_ptr<g2o::BlockSolverX> blockSolver_;
-  g2o::OptimizationAlgorithmGaussNewton *algorithm_;
+  g2o::OptimizationAlgorithmLevenberg *algorithm_;
   g2o::SparseOptimizer *optimizer_;
 
   int32_t iter_;
